@@ -1546,6 +1546,15 @@ select.form-control {
 
 .chart-header {
   margin-bottom: var(--space-16);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-header .form-control {
+  width: auto;
+  margin-left: var(--space-12);
+  min-width: 140px;
 }
 
 .chart-title {
@@ -2362,4 +2371,54 @@ select.form-control {
   width: 20px;
   background: linear-gradient(to left, var(--color-surface), transparent);
   pointer-events: none;
+}
+
+/* Summary text below KPIs */
+.summary-text {
+  margin: var(--space-16) 0;
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+}
+
+/* Simple timeline */
+.timeline-list {
+  margin-top: var(--space-16);
+  padding-left: var(--space-16);
+  border-left: 2px solid var(--color-border);
+}
+
+.timeline-item {
+  margin-bottom: var(--space-12);
+  position: relative;
+}
+
+.timeline-item::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  position: absolute;
+  left: -5px;
+  top: 4px;
+}
+
+.timeline-date {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* Reports */
+.reports-section {
+  display: none;
+}
+
+.map-container {
+  width: 100%;
+  height: 400px;
+}
+
+.settings-section {
+  display: none;
+  margin-bottom: var(--space-32);
 }
