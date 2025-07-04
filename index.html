@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBS 360 - Sistema de Gestão de Ocorrências | Itaú</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-color-scheme="dark">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo">
+                    <span class="logo-icon">🏦</span>
+                    <span class="logo-text">Ferramenta de Acompanhamento - COPF</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="user-info">Sistema Itaú - Gestão de Ocorrências</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item active">
+                        <a href="#" class="nav-link" data-section="dashboard">
+                            <span class="nav-icon">📊</span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="incidents">
+                            <span class="nav-icon">⚠️</span>
+                            <span class="nav-text">Ocorrências</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="reports">
+                            <span class="nav-icon">📈</span>
+                            <span class="nav-text">Relatórios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="settings">
+                            <span class="nav-icon">⚙️</span>
+                            <span class="nav-text">Configurações</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Filters Section -->
+            <section class="filters-section">
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label for="equipmentFilter" class="form-label">Equipamento:</label>
+                        <select id="equipmentFilter" class="form-control filter-select">
+                            <option value="">Todos os Equipamentos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="severityFilter" class="form-label">Severidade:</label>
+                        <select id="severityFilter" class="form-control filter-select">
+                            <option value="">Todas as Severidades</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="statusFilter" class="form-label">Status:</label>
+                        <select id="statusFilter" class="form-control filter-select">
+                            <option value="">Todos os Status</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="periodFilter" class="form-label">Período:</label>
+                        <select id="periodFilter" class="form-control filter-select">
+                            <option value="30">Últimos 30 dias</option>
+                            <option value="60">Últimos 60 dias</option>
+                            <option value="90" selected>Últimos 90 dias</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button id="clearFilters" class="btn btn--secondary">Limpar Filtros</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="dashboard-section">
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3 class="kpi-title">Total de Ocorrências</h3>
+                            <span class="kpi-icon">📊</span>
+                        </div>
+                        <div class="kpi-value" id="totalIncidents">-</div>
+                        <div class="kpi-subtitle">Nos últimos 90 dias</div>
+                    </div>
+                    <div class="kpi-card success">
+                        <div class="kpi-header">
+                            <h3 class="kpi-title">Ocorrências Resolvidos</h3>
+                            <span class="kpi-icon">✅</span>
+                        </div>
+                        <div class="kpi-value" id="resolvedIncidents">-</div>
+                        <div class="kpi-subtitle" id="resolvedPercentage">-% do total</div>
+                    </div>
+                    <div class="kpi-card warning">
+                        <div class="kpi-header">
+                            <h3 class="kpi-title">Ocorrências Ativas</h3>
+                            <span class="kpi-icon">🔄</span>
+                        </div>
+                        <div class="kpi-value" id="activeIncidents">-</div>
+                        <div class="kpi-subtitle" id="activePercentage">-% do total</div>
+                    </div>
+                    <div class="kpi-card info">
+                        <div class="kpi-header">
+                            <h3 class="kpi-title">MTTR Médio</h3>
+                            <span class="kpi-icon">⏱️</span>
+                        </div>
+                        <div class="kpi-value" id="averageMTTR">-</div>
+                        <div class="kpi-subtitle">Tempo médio de resolução</div>
+                    </div>
+                    <div class="kpi-card info">
+                        <div class="kpi-header">
+                            <h3 class="kpi-title">MTTD Médio</h3>
+                            <span class="kpi-icon">🔍</span>
+                        </div>
+                        <div class="kpi-value" id="averageMTTD">-</div>
+                        <div class="kpi-subtitle">Tempo médio de detecção</div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Ocorrências por Severidade</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="severityChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Ocorrências por Equipamento</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="equipmentChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Tendência Mensal de Ocorrências</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="monthlyTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">MTTR Mensal</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="mttrChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Incidents Table Section -->
+            <section id="incidents-section" class="incidents-section">
+                <div class="table-header">
+                    <h2 class="section-title">Lista de Ocorrências</h2>
+                    <div class="table-actions">
+                        <button class="btn btn--primary" id="exportBtn">Exportar Relatório</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="incidents-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Equipamento</th>
+                                <th>Agência</th>
+                                <th>Severidade</th>
+                                <th>Status</th>
+                                <th>Data Início</th>
+                                <th>Tempo Decorrido</th>
+                                <th>Responsável</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incidentsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span id="paginationInfo">Mostrando 0 de 0 Ocorrências</span>
+                    </div>
+                    <div class="pagination-controls">
+                        <button id="prevPage" class="btn btn--secondary">Anterior</button>
+                        <span id="pageNumbers" class="page-numbers"></span>
+                        <button id="nextPage" class="btn btn--secondary">Próximo</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Incident Detail Modal -->
+    <div id="incidentModal" class="modal hidden">
+        <div class="modal-content modal-content--large">
+            <div class="modal-header">
+                <h3 class="modal-title">Detalhes do Incidente</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-tabs">
+                <button class="tab-button active" data-tab="details">Detalhes</button>
+                <button class="tab-button" data-tab="comments">Comentários</button>
+                <button class="tab-button" data-tab="communications">Comunicações</button>
+            </div>
+            <div class="modal-body">
+                <div class="tab-content active" id="tab-details">
+                    <div id="modalBody"></div>
+                </div>
+                <div class="tab-content" id="tab-comments">
+                    <div class="comments-section">
+                        <div class="comment-form">
+                            <div class="form-group">
+                                <label for="commentType" class="form-label">Tipo de Comentário:</label>
+                                <select id="commentType" class="form-control">
+                                    <option value="interno">Interno</option>
+                                    <option value="fornecedor">Para Fornecedor</option>
+                                    <option value="tecnico">Técnico</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="commentText" class="form-label">Comentário:</label>
+                                <textarea id="commentText" class="form-control" rows="4" placeholder="Digite seu comentário..."></textarea>
+                            </div>
+                            <div class="comment-actions">
+                                <button class="btn btn--secondary" id="saveComment">Salvar Comentário</button>
+                                <button class="btn btn--primary" id="sendToSupplier">Enviar para Fornecedor</button>
+                            </div>
+                        </div>
+                        <div class="comments-history">
+                            <h4>Histórico de Comentários</h4>
+                            <div id="commentsList" class="comments-list"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-content" id="tab-communications">
+                    <div class="communications-section">
+                        <div class="communication-actions">
+                            <button class="btn btn--primary" id="newCommunication">📤 Nova Comunicação</button>
+                        </div>
+                        <div class="communications-history">
+                            <h4>Histórico de Comunicações</h4>
+                            <div id="communicationsList" class="communications-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supplier Communication Modal -->
+    <div id="supplierModal" class="modal hidden">
+        <div class="modal-content modal-content--large">
+            <div class="modal-header">
+                <h3 class="modal-title">💬 Comunicação com Fornecedor</h3>
+                <button class="modal-close" id="closeSupplierModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="supplier-form">
+                    <div class="supplier-info">
+                        <div class="supplier-details">
+                            <h5>Fornecedor:</h5>
+                            <span id="supplierName">-</span>
+                        </div>
+                        <div class="incident-ref">
+                            <h5>Incidente:</h5>
+                            <span id="incidentRef">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="communicationTemplate" class="form-label">Template de Mensagem:</label>
+                        <select id="communicationTemplate" class="form-control">
+                            <option value="">Selecione um template...</option>
+                            <option value="urgencia">Favor verificar funcionamento do equipamento com urgência</option>
+                            <option value="manutencao">Solicitamos manutenção preventiva do equipamento</option>
+                            <option value="falhas">Equipamento apresentando falhas intermitentes</option>
+                            <option value="substituicao">Necessária substituição de componente defeituoso</option>
+                            <option value="atualizacao">Favor atualizar software/firmware do equipamento</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="communicationSubject" class="form-label">Assunto:</label>
+                        <input type="text" id="communicationSubject" class="form-control" placeholder="Assunto da comunicação">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="communicationMessage" class="form-label">Mensagem:</label>
+                        <textarea id="communicationMessage" class="form-control" rows="6" placeholder="Digite a mensagem para o fornecedor..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group form-group--half">
+                            <label for="communicationPriority" class="form-label">Prioridade:</label>
+                            <select id="communicationPriority" class="form-control">
+                                <option value="baixa">Baixa</option>
+                                <option value="media" selected>Média</option>
+                                <option value="alta">Alta</option>
+                                <option value="critica">Crítica</option>
+                            </select>
+                        </div>
+                        <div class="form-group form-group--half">
+                            <label for="communicationDeadline" class="form-label">Prazo:</label>
+                            <input type="datetime-local" id="communicationDeadline" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeAttachments">
+                            <span class="checkmark"></span>
+                            Incluir anexos técnicos
+                        </label>
+                    </div>
+
+                    <div class="supplier-actions">
+                        <button class="btn btn--secondary" id="cancelCommunication">Cancelar</button>
+                        <button class="btn btn--primary" id="sendCommunication">📤 Enviar para Fornecedor</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
