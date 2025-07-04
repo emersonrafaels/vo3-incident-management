@@ -251,6 +251,64 @@
                     </div>
                     <div id="agencyMap" class="map-container"></div>
                 </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Ocorrências por Severidade</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="severityChartReport"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Ocorrências por Equipamento</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="equipmentChartReport"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Tendência Mensal de Ocorrências</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="monthlyTrendChartReport"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">MTTR Mensal</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="mttrChartReport"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Long Tail de Ocorrências</h3>
+                            <select id="longTailStatusFilterReport" class="form-control">
+                                <option value="abertas">Em Aberto</option>
+                                <option value="fechadas">Fechadas</option>
+                            </select>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="longTailChartReport"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="settings-section" style="display:none;">
+                <h2 class="section-title">Configurações</h2>
+                <div class="form-group">
+                    <label for="defaultTheme" class="form-label">Tema Padrão:</label>
+                    <select id="defaultTheme" class="form-control">
+                        <option value="light">Claro</option>
+                        <option value="dark">Escuro</option>
+                    </select>
+                </div>
             </section>
         </main>
     </div>

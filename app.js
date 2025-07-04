@@ -6,6 +6,7 @@ class IBSApp {
         this.currentPage = 1;
         this.itemsPerPage = 15;
         this.charts = {};
+        this.reportCharts = {};
         this.filters = {
             equipment: '',
             severity: '',
@@ -440,10 +441,26 @@ class IBSApp {
             });
         }
 
+        const ltFilterReport = document.getElementById('longTailStatusFilterReport');
+        if (ltFilterReport) {
+            ltFilterReport.addEventListener('change', () => {
+                if (this.reportCharts.longTail) this.updateLongTailChartReport();
+            });
+        }
+
         const mapFilter = document.getElementById('mapStatusFilter');
         if (mapFilter) {
             mapFilter.addEventListener('change', () => {
                 if (this.maps.agency) this.updateAgencyMap();
+            });
+        }
+
+        const themeSelect = document.getElementById('defaultTheme');
+        if (themeSelect) {
+            themeSelect.addEventListener('change', (e) => {
+                const value = e.target.value;
+                document.body.dataset.colorScheme = value;
+                localStorage.setItem('theme', value);
             });
         }
     }
@@ -487,16 +504,29 @@ class IBSApp {
             document.getElementById('dashboard-section').style.display = 'none';
             document.getElementById('incidents-section').style.display = 'block';
             document.getElementById('reports-section').style.display = 'none';
+            document.getElementById('settings-section').style.display = 'none';
             this.updateTable();
         } else if (section === 'reports') {
             document.getElementById('dashboard-section').style.display = 'none';
             document.getElementById('incidents-section').style.display = 'none';
             document.getElementById('reports-section').style.display = 'block';
+            document.getElementById('settings-section').style.display = 'none';
+            if (!this.maps.agency) {
+                this.createAgencyMap();
+            } else {
+                setTimeout(() => this.maps.agency.invalidateSize(), 100);
+            }
             this.updateReports();
+        } else if (section === 'settings') {
+            document.getElementById('dashboard-section').style.display = 'none';
+            document.getElementById('incidents-section').style.display = 'none';
+            document.getElementById('reports-section').style.display = 'none';
+            document.getElementById('settings-section').style.display = 'block';
         } else {
             document.getElementById('dashboard-section').style.display = 'block';
             document.getElementById('incidents-section').style.display = 'none';
             document.getElementById('reports-section').style.display = 'none';
+            document.getElementById('settings-section').style.display = 'none';
         }
     }
 
@@ -597,6 +627,12 @@ class IBSApp {
         this.createMTTRChart();
         this.createLongTailChart();
         this.createAgencyMap();
+
+        this.createSeverityChartReport();
+        this.createEquipmentChartReport();
+        this.createMonthlyTrendChartReport();
+        this.createMTTRChartReport();
+        this.createLongTailChartReport();
     }
 
     updateCharts() {
@@ -606,6 +642,11 @@ class IBSApp {
         if (this.charts.mttr) this.updateMTTRChart();
         if (this.charts.longTail) this.updateLongTailChart();
         if (this.maps.agency) this.updateAgencyMap();
+        if (this.reportCharts.severity) this.updateSeverityChartReport();
+        if (this.reportCharts.equipment) this.updateEquipmentChartReport();
+        if (this.reportCharts.monthlyTrend) this.updateMonthlyTrendChartReport();
+        if (this.reportCharts.mttr) this.updateMTTRChartReport();
+        if (this.reportCharts.longTail) this.updateLongTailChartReport();
     }
 
     createSeverityChart() {
@@ -917,6 +958,162 @@ class IBSApp {
         const data = this.getLongTailData(filter);
         this.charts.longTail.data.datasets[0].data = data.data;
         this.charts.longTail.update();
+    }
+
+    createSeverityChartReport() {
+        const ctx = document.getElementById('severityChartReport').getContext('2d');
+        const severityData = this.getSeverityData();
+        this.reportCharts.severity = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: severityData.labels,
+                datasets: [{
+                    label: 'Incidentes',
+                    data: severityData.data,
+                    backgroundColor: severityData.colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+
+    updateSeverityChartReport() {
+        const data = this.getSeverityData();
+        this.reportCharts.severity.data.datasets[0].data = data.data;
+        this.reportCharts.severity.update();
+    }
+
+    createEquipmentChartReport() {
+        const ctx = document.getElementById('equipmentChartReport').getContext('2d');
+        const equipmentData = this.getEquipmentData();
+        this.reportCharts.equipment = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: equipmentData.labels,
+                datasets: [{
+                    label: 'Incidentes',
+                    data: equipmentData.data,
+                    backgroundColor: '#1FB8CD',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    x: { ticks: { maxRotation: 45 } }
+                }
+            }
+        });
+    }
+
+    updateEquipmentChartReport() {
+        const data = this.getEquipmentData();
+        this.reportCharts.equipment.data.datasets[0].data = data.data;
+        this.reportCharts.equipment.update();
+    }
+
+    createMonthlyTrendChartReport() {
+        const ctx = document.getElementById('monthlyTrendChartReport').getContext('2d');
+        const monthlyData = this.getMonthlyData();
+        this.reportCharts.monthlyTrend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: monthlyData.labels,
+                datasets: [{
+                    label: 'Incidentes por Mês',
+                    data: monthlyData.data,
+                    borderColor: '#1FB8CD',
+                    backgroundColor: 'rgba(31, 184, 205, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+
+    updateMonthlyTrendChartReport() {
+        const data = this.getMonthlyData();
+        this.reportCharts.monthlyTrend.data.datasets[0].data = data.data;
+        this.reportCharts.monthlyTrend.update();
+    }
+
+    createMTTRChartReport() {
+        const ctx = document.getElementById('mttrChartReport').getContext('2d');
+        const mttrData = this.getMTTRData();
+        this.reportCharts.mttr = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: mttrData.labels,
+                datasets: [{
+                    label: 'MTTR Médio (horas)',
+                    data: mttrData.data,
+                    borderColor: '#FFC185',
+                    backgroundColor: 'rgba(255, 193, 133, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: value => value + 'h' }
+                    }
+                }
+            }
+        });
+    }
+
+    updateMTTRChartReport() {
+        const data = this.getMTTRData();
+        this.reportCharts.mttr.data.datasets[0].data = data.data;
+        this.reportCharts.mttr.update();
+    }
+
+    createLongTailChartReport() {
+        const ctx = document.getElementById('longTailChartReport').getContext('2d');
+        const filter = document.getElementById('longTailStatusFilterReport').value;
+        const data = this.getLongTailData(filter);
+        this.reportCharts.longTail = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Ocorrências',
+                    data: data.data,
+                    backgroundColor: '#A855F7',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+
+    updateLongTailChartReport() {
+        const filter = document.getElementById('longTailStatusFilterReport').value;
+        const data = this.getLongTailData(filter);
+        this.reportCharts.longTail.data.datasets[0].data = data.data;
+        this.reportCharts.longTail.update();
     }
 
     createAgencyMap() {
