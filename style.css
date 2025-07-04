@@ -2407,3 +2407,12 @@ select.form-control {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
+
+/* Reports */
+.reports-section {
+  display: none;
+}
+
+.map-container {
+  height: 400px;
+}

@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IBS 360 - Sistema de Gestão de Ocorrências | Itaú</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 </head>
 <body data-color-scheme="dark">
     <!-- Header -->
@@ -231,6 +234,22 @@
                         <span id="pageNumbers" class="page-numbers"></span>
                         <button id="nextPage" class="btn btn--secondary">Próximo</button>
                     </div>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports-section" class="reports-section" style="display:none;">
+                <h2 class="section-title">Relatórios</h2>
+                <p id="reportsNarrative" class="summary-text"></p>
+                <div class="chart-container chart-wide">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Mapa de Agências</h3>
+                        <select id="mapStatusFilter" class="form-control">
+                            <option value="abertas">Abertas</option>
+                            <option value="todas">Todas</option>
+                        </select>
+                    </div>
+                    <div id="agencyMap" class="map-container"></div>
                 </div>
             </section>
         </main>
