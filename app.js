@@ -10,7 +10,8 @@ class IBSApp {
             equipment: '',
             severity: '',
             status: '',
-            period: 90
+            period: 90,
+            search: ''
         };
         this.currentIncidentId = null;
         this.comments = {};
@@ -55,6 +56,30 @@ class IBSApp {
             "5002 - Aldeota"
         ];
 
+        this.agenciaCoords = {
+            "1001 - Vila Olímpia": [-23.5955, -46.6874],
+            "1002 - Faria Lima": [-23.5693, -46.7001],
+            "1003 - Paulista": [-23.5617, -46.6559],
+            "1004 - Moema": [-23.6019, -46.6735],
+            "1005 - Itaim Bibi": [-23.5874, -46.674],
+            "1006 - Brooklin": [-23.6221, -46.6971],
+            "1007 - Santo Amaro": [-23.6561, -46.7132],
+            "1008 - Pinheiros": [-23.5687, -46.6959],
+            "1009 - Vila Madalena": [-23.5721, -46.695],
+            "1010 - Perdizes": [-23.5353, -46.6683],
+            "2001 - Copacabana": [-22.9719, -43.1822],
+            "2002 - Ipanema": [-22.9836, -43.2048],
+            "2003 - Leblon": [-22.9832, -43.2237],
+            "2004 - Barra da Tijuca": [-23.0003, -43.3609],
+            "2005 - Tijuca": [-22.9252, -43.2315],
+            "3001 - Savassi BH": [-19.9318, -43.9392],
+            "3002 - Centro BH": [-19.9191, -43.9386],
+            "4001 - Boa Viagem": [-8.1222, -34.9156],
+            "4002 - Casa Forte": [-8.0351, -34.9111],
+            "5001 - Meireles": [-3.7225, -38.4934],
+            "5002 - Aldeota": [-3.7363, -38.4885]
+        };
+
         this.responsaveis = [
             "João Silva - Técnico TI", "Maria Santos - Suporte N2", "Pedro Costa - Especialista ATM",
             "Ana Oliveira - Técnico Redes", "Carlos Lima - Suporte Segurança", "Fernanda Alves - Técnico Hardware",
@@ -71,9 +96,12 @@ class IBSApp {
         ];
 
         this.usuarios = [
-            "Carlos Mendes - Analista NOC", "Fernanda Silva - Supervisora Técnica", 
+            "Carlos Mendes - Analista NOC", "Fernanda Silva - Supervisora Técnica",
             "Roberto Lima - Coordenador Operacional", "Ana Costa - Analista de Suporte"
         ];
+
+        this.maps = {};
+        this.heatLayer = null;
 
         this.init();
     }
@@ -91,6 +119,8 @@ class IBSApp {
         setTimeout(() => {
             this.createCharts();
         }, 100);
+
+        this.setupThemeToggle();
     }
 
     generateMockData() {
@@ -317,6 +347,11 @@ class IBSApp {
             this.applyFilters();
         });
 
+        document.getElementById('searchInput').addEventListener('keyup', (e) => {
+            this.filters.search = e.target.value;
+            this.applyFilters();
+        });
+
         document.getElementById('clearFilters').addEventListener('click', () => {
             this.clearFilters();
         });
@@ -397,6 +432,20 @@ class IBSApp {
         document.getElementById('exportBtn').addEventListener('click', () => {
             this.exportData();
         });
+
+        const ltFilter = document.getElementById('longTailStatusFilter');
+        if (ltFilter) {
+            ltFilter.addEventListener('change', () => {
+                if (this.charts.longTail) this.updateLongTailChart();
+            });
+        }
+
+        const mapFilter = document.getElementById('mapStatusFilter');
+        if (mapFilter) {
+            mapFilter.addEventListener('change', () => {
+                if (this.maps.agency) this.updateAgencyMap();
+            });
+        }
     }
 
     setupFilters() {
@@ -437,10 +486,17 @@ class IBSApp {
         if (section === 'incidents') {
             document.getElementById('dashboard-section').style.display = 'none';
             document.getElementById('incidents-section').style.display = 'block';
+            document.getElementById('reports-section').style.display = 'none';
             this.updateTable();
+        } else if (section === 'reports') {
+            document.getElementById('dashboard-section').style.display = 'none';
+            document.getElementById('incidents-section').style.display = 'none';
+            document.getElementById('reports-section').style.display = 'block';
+            this.updateReports();
         } else {
             document.getElementById('dashboard-section').style.display = 'block';
             document.getElementById('incidents-section').style.display = 'none';
+            document.getElementById('reports-section').style.display = 'none';
         }
     }
 
@@ -465,19 +521,25 @@ class IBSApp {
         const now = new Date();
         const periodStart = new Date(now.getTime() - (this.filters.period * 24 * 60 * 60 * 1000));
 
+        const search = this.filters.search.toLowerCase();
         this.filteredIncidents = this.incidents.filter(incident => {
             const matchesPeriod = incident.startDate >= periodStart;
             const matchesEquipment = !this.filters.equipment || incident.equipment === this.filters.equipment;
             const matchesSeverity = !this.filters.severity || incident.severity === this.filters.severity;
             const matchesStatus = !this.filters.status || incident.status === this.filters.status;
+            const matchesSearch = !search ||
+                incident.id.toLowerCase().includes(search) ||
+                incident.description.toLowerCase().includes(search) ||
+                incident.agency.toLowerCase().includes(search);
 
-            return matchesPeriod && matchesEquipment && matchesSeverity && matchesStatus;
+            return matchesPeriod && matchesEquipment && matchesSeverity && matchesStatus && matchesSearch;
         });
 
         this.currentPage = 1;
         this.updateDashboard();
         this.updateCharts();
         this.updateTable();
+        this.updateReports();
     }
 
     clearFilters() {
@@ -485,13 +547,17 @@ class IBSApp {
             equipment: '',
             severity: '',
             status: '',
-            period: 90
+            period: 90,
+            search: ''
         };
 
         document.getElementById('equipmentFilter').value = '';
         document.getElementById('severityFilter').value = '';
         document.getElementById('statusFilter').value = '';
         document.getElementById('periodFilter').value = '90';
+        document.getElementById('searchInput').value = '';
+        const mapFilter = document.getElementById('mapStatusFilter');
+        if (mapFilter) mapFilter.value = 'abertas';
 
         this.applyFilters();
     }
@@ -519,6 +585,9 @@ class IBSApp {
         document.getElementById('activePercentage').textContent = total > 0 ? `${Math.round((active / total) * 100)}% do total` : '0% do total';
         document.getElementById('averageMTTR').textContent = `${avgMTTR.toFixed(1)}h`;
         document.getElementById('averageMTTD').textContent = `${(avgMTTD * 60).toFixed(0)}min`;
+
+        const summary = `Nos últimos ${this.filters.period} dias foram registradas ${total} ocorrências, ${resolved} resolvidas.`;
+        document.getElementById('summaryText').textContent = summary;
     }
 
     createCharts() {
@@ -526,6 +595,8 @@ class IBSApp {
         this.createEquipmentChart();
         this.createMonthlyTrendChart();
         this.createMTTRChart();
+        this.createLongTailChart();
+        this.createAgencyMap();
     }
 
     updateCharts() {
@@ -533,6 +604,8 @@ class IBSApp {
         if (this.charts.equipment) this.updateEquipmentChart();
         if (this.charts.monthlyTrend) this.updateMonthlyTrendChart();
         if (this.charts.mttr) this.updateMTTRChart();
+        if (this.charts.longTail) this.updateLongTailChart();
+        if (this.maps.agency) this.updateAgencyMap();
     }
 
     createSeverityChart() {
@@ -785,6 +858,121 @@ class IBSApp {
         };
     }
 
+    getLongTailData(view) {
+        const bins = ['<1d', '1-2d', '2-3d', '3-5d', '5-7d', '7-14d', '14+d'];
+        const counts = Array(bins.length).fill(0);
+        const now = new Date();
+        const dataset = this.filteredIncidents.filter(inc => {
+            const closed = inc.status === 'Resolvido' || inc.status === 'Fechado';
+            return view === 'fechadas' ? closed : !closed;
+        });
+
+        dataset.forEach(inc => {
+            const endDate = inc.resolutionDate ? inc.resolutionDate : now;
+            const days = (endDate - inc.startDate) / (1000 * 60 * 60 * 24);
+            let idx = 6;
+            if (days < 1) idx = 0;
+            else if (days < 2) idx = 1;
+            else if (days < 3) idx = 2;
+            else if (days < 5) idx = 3;
+            else if (days < 7) idx = 4;
+            else if (days < 14) idx = 5;
+            counts[idx]++;
+        });
+
+        return { labels: bins, data: counts };
+    }
+
+    createLongTailChart() {
+        const ctx = document.getElementById('longTailChart').getContext('2d');
+        const filter = document.getElementById('longTailStatusFilter').value;
+        const data = this.getLongTailData(filter);
+
+        this.charts.longTail = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Ocorrências',
+                    data: data.data,
+                    backgroundColor: '#A855F7',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+
+    updateLongTailChart() {
+        const filter = document.getElementById('longTailStatusFilter').value;
+        const data = this.getLongTailData(filter);
+        this.charts.longTail.data.datasets[0].data = data.data;
+        this.charts.longTail.update();
+    }
+
+    createAgencyMap() {
+        const map = L.map('agencyMap').setView([-15.78, -47.93], 4);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        this.maps.agency = map;
+        this.updateAgencyMap();
+    }
+
+    getAgencyHeatData(view) {
+        const counts = {};
+        const dataset = this.filteredIncidents.filter(inc => {
+            const closed = inc.status === 'Resolvido' || inc.status === 'Fechado';
+            return view === 'abertas' ? !closed : true;
+        });
+
+        dataset.forEach(inc => {
+            const coords = this.agenciaCoords[inc.agency];
+            if (coords) {
+                const key = coords.join(',');
+                counts[key] = (counts[key] || 0) + 1;
+            }
+        });
+
+        return Object.entries(counts).map(([k, c]) => {
+            const [lat, lng] = k.split(',').map(Number);
+            return [lat, lng, c];
+        });
+    }
+
+    updateAgencyMap() {
+        const filter = document.getElementById('mapStatusFilter').value;
+        const heatData = this.getAgencyHeatData(filter);
+        if (this.heatLayer) {
+            this.heatLayer.setLatLngs(heatData);
+        } else if (this.maps.agency) {
+            this.heatLayer = L.heatLayer(heatData, { radius: 25 }).addTo(this.maps.agency);
+        }
+    }
+
+    updateReports() {
+        if (this.maps.agency) this.updateAgencyMap();
+        const agencies = new Set(this.filteredIncidents.map(inc => inc.agency));
+        const openAgencies = new Set(
+            this.filteredIncidents
+                .filter(inc => inc.status !== 'Resolvido' && inc.status !== 'Fechado')
+                .map(inc => inc.agency)
+        );
+        const text = `Monitorando ${agencies.size} agências, ${openAgencies.size} com ocorrências em aberto.`;
+        const el = document.getElementById('reportsNarrative');
+        if (el) el.textContent = text;
+    }
+
     updateTable() {
         const tableBody = document.getElementById('incidentsTableBody');
         tableBody.innerHTML = '';
@@ -976,6 +1164,8 @@ class IBSApp {
             </div>
         `;
 
+        this.renderTimeline(incidentId);
+
         // Reset to details tab
         this.switchTab('details');
         document.getElementById('incidentModal').classList.remove('hidden');
@@ -1094,11 +1284,39 @@ class IBSApp {
                     </span>
                 </div>
                 <div class="communication-meta">
-                    <strong>Para:</strong> ${comm.supplier} • 
-                    <strong>Prioridade:</strong> ${comm.priority.charAt(0).toUpperCase() + comm.priority.slice(1)} • 
+                    <strong>Para:</strong> ${comm.supplier} •
+                    <strong>Prioridade:</strong> ${comm.priority.charAt(0).toUpperCase() + comm.priority.slice(1)} •
                     ${comm.timestamp.toLocaleDateString('pt-BR')} ${comm.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 <div class="communication-text">${comm.message}</div>
+            </div>
+        `).join('');
+    }
+
+    renderTimeline(incidentId) {
+        const container = document.getElementById('timelineContainer');
+        if (!container) return;
+        const incident = this.incidents.find(inc => inc.id === incidentId);
+        if (!incident) return;
+
+        const events = [];
+        events.push({ time: incident.startDate, text: 'Incidente aberto' });
+        (this.comments[incidentId] || []).forEach(c => {
+            events.push({ time: c.timestamp, text: `Comentário: ${c.text}` });
+        });
+        (this.communications[incidentId] || []).forEach(c => {
+            events.push({ time: c.timestamp, text: `Comunicação: ${c.subject}` });
+        });
+        if (incident.resolutionDate) {
+            events.push({ time: incident.resolutionDate, text: 'Incidente resolvido' });
+        }
+
+        events.sort((a, b) => a.time - b.time);
+
+        container.innerHTML = events.map(ev => `
+            <div class="timeline-item">
+                <div class="timeline-date">${ev.time.toLocaleDateString('pt-BR')} ${ev.time.toLocaleTimeString('pt-BR')}</div>
+                <div class="timeline-text">${ev.text}</div>
             </div>
         `).join('');
     }
@@ -1252,17 +1470,46 @@ class IBSApp {
         }, 300);
     }
 
+    setupThemeToggle() {
+        const body = document.body;
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            body.dataset.colorScheme = saved;
+        }
+        const btn = document.getElementById('themeToggle');
+        if (btn) {
+            btn.addEventListener('click', () => {
+                const next = body.dataset.colorScheme === 'dark' ? 'light' : 'dark';
+                body.dataset.colorScheme = next;
+                localStorage.setItem('theme', next);
+            });
+        }
+    }
+
     exportData() {
-        const csvContent = this.generateCSV();
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `incidentes_itau_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const btn = document.getElementById('exportBtn');
+        if (btn) {
+            btn.classList.add('loading');
+            btn.textContent = 'Exportando...';
+        }
+
+        setTimeout(() => {
+            const csvContent = this.generateCSV();
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `incidentes_itau_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            if (btn) {
+                btn.classList.remove('loading');
+                btn.textContent = 'Exportar Relatório';
+            }
+        }, 500);
     }
 
     generateCSV() {
