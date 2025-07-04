@@ -5,6 +5,12 @@ class IBSApp {
         this.filteredIncidents = [];
         this.currentPage = 1;
         this.itemsPerPage = 15;
+        this.heatRadius = 25;
+
+        const storedPerPage = localStorage.getItem('itemsPerPage');
+        if (storedPerPage) this.itemsPerPage = parseInt(storedPerPage, 10) || 15;
+        const storedRadius = localStorage.getItem('heatRadius');
+        if (storedRadius) this.heatRadius = parseInt(storedRadius, 10) || 25;
         this.charts = {};
         this.reportCharts = {};
         this.filters = {
@@ -461,6 +467,30 @@ class IBSApp {
                 const value = e.target.value;
                 document.body.dataset.colorScheme = value;
                 localStorage.setItem('theme', value);
+            });
+        }
+
+        const pageInput = document.getElementById('itemsPerPage');
+        if (pageInput) {
+            pageInput.value = this.itemsPerPage;
+            pageInput.addEventListener('change', (e) => {
+                this.itemsPerPage = parseInt(e.target.value, 10) || 15;
+                localStorage.setItem('itemsPerPage', this.itemsPerPage);
+                this.updateTable();
+            });
+        }
+
+        const radiusInput = document.getElementById('heatRadius');
+        if (radiusInput) {
+            radiusInput.value = this.heatRadius;
+            radiusInput.addEventListener('input', (e) => {
+                this.heatRadius = parseInt(e.target.value, 10) || 25;
+                localStorage.setItem('heatRadius', this.heatRadius);
+                if (this.heatLayer && this.maps.agency) {
+                    this.maps.agency.removeLayer(this.heatLayer);
+                    this.heatLayer = null;
+                }
+                if (this.maps.agency) this.updateAgencyMap();
             });
         }
     }
@@ -1153,19 +1183,28 @@ class IBSApp {
         if (this.heatLayer) {
             this.heatLayer.setLatLngs(heatData);
         } else if (this.maps.agency) {
-            this.heatLayer = L.heatLayer(heatData, { radius: 25 }).addTo(this.maps.agency);
+            this.heatLayer = L.heatLayer(heatData, { radius: this.heatRadius }).addTo(this.maps.agency);
         }
     }
 
     updateReports() {
         if (this.maps.agency) this.updateAgencyMap();
         const agencies = new Set(this.filteredIncidents.map(inc => inc.agency));
-        const openAgencies = new Set(
-            this.filteredIncidents
-                .filter(inc => inc.status !== 'Resolvido' && inc.status !== 'Fechado')
-                .map(inc => inc.agency)
-        );
-        const text = `Monitorando ${agencies.size} agências, ${openAgencies.size} com ocorrências em aberto.`;
+        const total = this.filteredIncidents.length;
+        const resolved = this.filteredIncidents.filter(inc => inc.status === 'Resolvido' || inc.status === 'Fechado');
+        const open = total - resolved.length;
+        const severityCounts = {};
+        this.filteredIncidents.forEach(inc => {
+            severityCounts[inc.severity] = (severityCounts[inc.severity] || 0) + 1;
+        });
+        const topSeverity = Object.entries(severityCounts).sort((a, b) => b[1] - a[1])[0];
+        const topSeverityName = topSeverity ? topSeverity[0] : '';
+        const avgMttr = resolved.length > 0 ?
+            resolved.reduce((sum, inc) => sum + ((inc.resolutionDate - inc.startDate) / 3600000), 0) / resolved.length : 0;
+
+        const text = `Nos últimos ${this.filters.period} dias monitoramos ${agencies.size} agências e registramos ${total} ocorrências, ` +
+            `${open} em aberto. A severidade mais comum foi ${topSeverityName} ` +
+            `e o MTTR médio das ocorrências resolvidas está em ${avgMttr.toFixed(1)} horas.`;
         const el = document.getElementById('reportsNarrative');
         if (el) el.textContent = text;
     }
