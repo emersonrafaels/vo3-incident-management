@@ -5,20 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IBS 360 - Sistema de Gestão de Ocorrências | Itaú</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 </head>
 <body data-color-scheme="dark">
     <!-- Header -->
     <header class="header">
         <div class="header-content">
             <div class="header-left">
-                <div class="logo">
-                    <span class="logo-icon">🏦</span>
+                <div class="logo" aria-label="Itaú">
+                    <span class="logo-icon" aria-hidden="true">🏦</span>
                     <span class="logo-text">Ferramenta de Acompanhamento - COPF</span>
                 </div>
             </div>
             <div class="header-right">
                 <span class="user-info">Sistema Itaú - Gestão de Ocorrências</span>
+                <button id="themeToggle" class="btn btn--secondary" aria-label="Alternar tema">🌓</button>
             </div>
         </div>
     </header>
@@ -29,26 +33,26 @@
             <nav class="sidebar-nav">
                 <ul class="nav-list">
                     <li class="nav-item active">
-                        <a href="#" class="nav-link" data-section="dashboard">
-                            <span class="nav-icon">📊</span>
+                        <a href="#" class="nav-link" data-section="dashboard" aria-label="Dashboard">
+                            <span class="nav-icon" aria-hidden="true">📊</span>
                             <span class="nav-text">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-section="incidents">
-                            <span class="nav-icon">⚠️</span>
+                        <a href="#" class="nav-link" data-section="incidents" aria-label="Ocorrências">
+                            <span class="nav-icon" aria-hidden="true">⚠️</span>
                             <span class="nav-text">Ocorrências</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-section="reports">
-                            <span class="nav-icon">📈</span>
+                        <a href="#" class="nav-link" data-section="reports" aria-label="Relatórios">
+                            <span class="nav-icon" aria-hidden="true">📈</span>
                             <span class="nav-text">Relatórios</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-section="settings">
-                            <span class="nav-icon">⚙️</span>
+                        <a href="#" class="nav-link" data-section="settings" aria-label="Configurações">
+                            <span class="nav-icon" aria-hidden="true">⚙️</span>
                             <span class="nav-text">Configurações</span>
                         </a>
                     </li>
@@ -86,6 +90,10 @@
                             <option value="60">Últimos 60 dias</option>
                             <option value="90" selected>Últimos 90 dias</option>
                         </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="searchInput" class="form-label">Busca Rápida:</label>
+                        <input id="searchInput" type="text" class="form-control" placeholder="Buscar por texto ou ID">
                     </div>
                     <div class="filter-group">
                         <button id="clearFilters" class="btn btn--secondary">Limpar Filtros</button>
@@ -139,6 +147,8 @@
                     </div>
                 </div>
 
+                <p id="summaryText" class="summary-text"></p>
+
                 <!-- Charts Grid -->
                 <div class="charts-grid">
                     <div class="chart-container">
@@ -171,6 +181,18 @@
                         </div>
                         <div class="chart-content">
                             <canvas id="mttrChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Long Tail de Ocorrências</h3>
+                            <select id="longTailStatusFilter" class="form-control">
+                                <option value="abertas">Em Aberto</option>
+                                <option value="fechadas">Fechadas</option>
+                            </select>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="longTailChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -214,6 +236,80 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Reports Section -->
+            <section id="reports-section" class="reports-section" style="display:none;">
+                <h2 class="section-title">Relatórios</h2>
+                <p id="reportsNarrative" class="summary-text"></p>
+                <div class="chart-container chart-wide">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Mapa de Agências</h3>
+                        <select id="mapStatusFilter" class="form-control">
+                            <option value="abertas">Abertas</option>
+                            <option value="todas">Todas</option>
+                        </select>
+                    </div>
+                    <div id="agencyMap" class="map-container"></div>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Ocorrências por Severidade</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="severityChartReport"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Ocorrências por Equipamento</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="equipmentChartReport"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Tendência Mensal de Ocorrências</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="monthlyTrendChartReport"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">MTTR Mensal</h3>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="mttrChartReport"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-wide">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Long Tail de Ocorrências</h3>
+                            <select id="longTailStatusFilterReport" class="form-control">
+                                <option value="abertas">Em Aberto</option>
+                                <option value="fechadas">Fechadas</option>
+                            </select>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="longTailChartReport"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="settings-section" style="display:none;">
+                <h2 class="section-title">Configurações</h2>
+                <div class="form-group">
+                    <label for="defaultTheme" class="form-label">Tema Padrão:</label>
+                    <select id="defaultTheme" class="form-control">
+                        <option value="light">Claro</option>
+                        <option value="dark">Escuro</option>
+                    </select>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -222,7 +318,7 @@
         <div class="modal-content modal-content--large">
             <div class="modal-header">
                 <h3 class="modal-title">Detalhes do Incidente</h3>
-                <button class="modal-close" id="closeModal">&times;</button>
+                <button class="modal-close" id="closeModal" aria-label="Fechar">&times;</button>
             </div>
             <div class="modal-tabs">
                 <button class="tab-button active" data-tab="details">Detalhes</button>
@@ -232,6 +328,7 @@
             <div class="modal-body">
                 <div class="tab-content active" id="tab-details">
                     <div id="modalBody"></div>
+                    <div id="timelineContainer" class="timeline-list"></div>
                 </div>
                 <div class="tab-content" id="tab-comments">
                     <div class="comments-section">
@@ -250,7 +347,7 @@
                             </div>
                             <div class="comment-actions">
                                 <button class="btn btn--secondary" id="saveComment">Salvar Comentário</button>
-                                <button class="btn btn--primary" id="sendToSupplier">Enviar para Fornecedor</button>
+                                <button class="btn btn--primary" id="sendToSupplier" aria-label="Enviar para Fornecedor">Enviar para Fornecedor</button>
                             </div>
                         </div>
                         <div class="comments-history">
@@ -262,7 +359,7 @@
                 <div class="tab-content" id="tab-communications">
                     <div class="communications-section">
                         <div class="communication-actions">
-                            <button class="btn btn--primary" id="newCommunication">📤 Nova Comunicação</button>
+                            <button class="btn btn--primary" id="newCommunication" aria-label="Nova Comunicação">📤 Nova Comunicação</button>
                         </div>
                         <div class="communications-history">
                             <h4>Histórico de Comunicações</h4>
@@ -279,7 +376,7 @@
         <div class="modal-content modal-content--large">
             <div class="modal-header">
                 <h3 class="modal-title">💬 Comunicação com Fornecedor</h3>
-                <button class="modal-close" id="closeSupplierModal">&times;</button>
+                <button class="modal-close" id="closeSupplierModal" aria-label="Fechar">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="supplier-form">
@@ -342,7 +439,7 @@
 
                     <div class="supplier-actions">
                         <button class="btn btn--secondary" id="cancelCommunication">Cancelar</button>
-                        <button class="btn btn--primary" id="sendCommunication">📤 Enviar para Fornecedor</button>
+                        <button class="btn btn--primary" id="sendCommunication" aria-label="Enviar para Fornecedor">📤 Enviar para Fornecedor</button>
                     </div>
                 </div>
             </div>
