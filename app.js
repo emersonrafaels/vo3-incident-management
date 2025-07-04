@@ -87,6 +87,30 @@ class IBSApp {
             "5002 - Aldeota": [-3.7363, -38.4885]
         };
 
+        this.agencyInfo = {
+            "1001 - Vila Olímpia": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: false, imovel: "Próprio", tipo: "Full Service", arquetipo: "Standard" },
+            "1002 - Faria Lima": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: true, imovel: "Alugado", tipo: "Full Service", arquetipo: "Premium" },
+            "1003 - Paulista": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: false, imovel: "Próprio", tipo: "Espaço Itaú", arquetipo: "Premium" },
+            "1004 - Moema": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: false, imovel: "Alugado", tipo: "Full Service", arquetipo: "Standard" },
+            "1005 - Itaim Bibi": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: true, imovel: "Próprio", tipo: "Full Service", arquetipo: "Premium" },
+            "1006 - Brooklin": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: false, imovel: "Alugado", tipo: "Espaço Itaú", arquetipo: "Standard" },
+            "1007 - Santo Amaro": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: false, imovel: "Próprio", tipo: "Full Service", arquetipo: "UltraLight" },
+            "1008 - Pinheiros": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: true, imovel: "Alugado", tipo: "Full Service", arquetipo: "Premium" },
+            "1009 - Vila Madalena": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: false, imovel: "Próprio", tipo: "Espaço Itaú", arquetipo: "UltraLight" },
+            "1010 - Perdizes": { municipio: "São Paulo", diretoria: "Diretoria SP", vip: false, imovel: "Alugado", tipo: "Full Service", arquetipo: "Standard" },
+            "2001 - Copacabana": { municipio: "Rio de Janeiro", diretoria: "Diretoria RJ", vip: true, imovel: "Próprio", tipo: "Full Service", arquetipo: "Premium" },
+            "2002 - Ipanema": { municipio: "Rio de Janeiro", diretoria: "Diretoria RJ", vip: true, imovel: "Alugado", tipo: "Espaço Itaú", arquetipo: "Premium" },
+            "2003 - Leblon": { municipio: "Rio de Janeiro", diretoria: "Diretoria RJ", vip: true, imovel: "Próprio", tipo: "Full Service", arquetipo: "Premium" },
+            "2004 - Barra da Tijuca": { municipio: "Rio de Janeiro", diretoria: "Diretoria RJ", vip: false, imovel: "Alugado", tipo: "Full Service", arquetipo: "Standard" },
+            "2005 - Tijuca": { municipio: "Rio de Janeiro", diretoria: "Diretoria RJ", vip: false, imovel: "Próprio", tipo: "Espaço Itaú", arquetipo: "Standard" },
+            "3001 - Savassi BH": { municipio: "Belo Horizonte", diretoria: "Diretoria MG", vip: false, imovel: "Próprio", tipo: "Full Service", arquetipo: "Standard" },
+            "3002 - Centro BH": { municipio: "Belo Horizonte", diretoria: "Diretoria MG", vip: false, imovel: "Alugado", tipo: "Espaço Itaú", arquetipo: "Standard" },
+            "4001 - Boa Viagem": { municipio: "Recife", diretoria: "Diretoria PE", vip: true, imovel: "Próprio", tipo: "Full Service", arquetipo: "Premium" },
+            "4002 - Casa Forte": { municipio: "Recife", diretoria: "Diretoria PE", vip: false, imovel: "Alugado", tipo: "Espaço Itaú", arquetipo: "Standard" },
+            "5001 - Meireles": { municipio: "Fortaleza", diretoria: "Diretoria CE", vip: false, imovel: "Próprio", tipo: "Full Service", arquetipo: "Standard" },
+            "5002 - Aldeota": { municipio: "Fortaleza", diretoria: "Diretoria CE", vip: false, imovel: "Alugado", tipo: "Espaço Itaú", arquetipo: "UltraLight" }
+        };
+
         this.responsaveis = [
             "João Silva - Técnico TI", "Maria Santos - Suporte N2", "Pedro Costa - Especialista ATM",
             "Ana Oliveira - Técnico Redes", "Carlos Lima - Suporte Segurança", "Fernanda Alves - Técnico Hardware",
@@ -395,6 +419,10 @@ class IBSApp {
             document.getElementById('supplierModal').classList.add('hidden');
         });
 
+        document.getElementById('closeAgencyModal').addEventListener('click', () => {
+            document.getElementById('agencyModal').classList.add('hidden');
+        });
+
         // Click outside modal to close
         document.getElementById('incidentModal').addEventListener('click', (e) => {
             if (e.target.id === 'incidentModal') {
@@ -405,6 +433,12 @@ class IBSApp {
         document.getElementById('supplierModal').addEventListener('click', (e) => {
             if (e.target.id === 'supplierModal') {
                 document.getElementById('supplierModal').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('agencyModal').addEventListener('click', (e) => {
+            if (e.target.id === 'agencyModal') {
+                document.getElementById('agencyModal').classList.add('hidden');
             }
         });
 
@@ -1230,7 +1264,7 @@ class IBSApp {
                     <span class="equipment-icon">${incident.equipmentIcon}</span>
                     ${incident.equipment}
                 </td>
-                <td>${incident.agency}</td>
+                <td><button class="agency-link" data-agency="${incident.agency}">${incident.agency}</button></td>
                 <td>
                     <span class="severity-badge severity-${severityClass}">${incident.severity}</span>
                 </td>
@@ -1253,9 +1287,11 @@ class IBSApp {
             // Add event listeners to the buttons
             const viewBtn = row.querySelector('.btn-view');
             const commBtn = row.querySelector('.btn-communicate');
-            
+            const agencyBtn = row.querySelector('.agency-link');
+
             viewBtn.addEventListener('click', () => this.showIncidentDetail(incident.id));
             commBtn.addEventListener('click', () => this.openSupplierCommunication(incident.id));
+            agencyBtn.addEventListener('click', () => this.showAgencyInfo(incident.agency));
             
             tableBody.appendChild(row);
         });
@@ -1405,6 +1441,22 @@ class IBSApp {
         // Reset to details tab
         this.switchTab('details');
         document.getElementById('incidentModal').classList.remove('hidden');
+    }
+
+    showAgencyInfo(agency) {
+        const info = this.agencyInfo[agency];
+        if (!info) return;
+        const body = document.getElementById('agencyModalBody');
+        body.innerHTML = `
+            <div class="detail-row"><span class="detail-label">Agência:</span><span class="detail-value">${agency}</span></div>
+            <div class="detail-row"><span class="detail-label">Município:</span><span class="detail-value">${info.municipio}</span></div>
+            <div class="detail-row"><span class="detail-label">Diretoria Comercial:</span><span class="detail-value">${info.diretoria}</span></div>
+            <div class="detail-row"><span class="detail-label">VIP:</span><span class="detail-value">${info.vip ? 'Sim' : 'Não'}</span></div>
+            <div class="detail-row"><span class="detail-label">Imóvel:</span><span class="detail-value">${info.imovel}</span></div>
+            <div class="detail-row"><span class="detail-label">Tipo:</span><span class="detail-value">${info.tipo}</span></div>
+            <div class="detail-row"><span class="detail-label">Arquétipo:</span><span class="detail-value">${info.arquetipo}</span></div>
+        `;
+        document.getElementById('agencyModal').classList.remove('hidden');
     }
 
     openSupplierCommunication(incidentId) {

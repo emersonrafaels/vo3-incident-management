@@ -1919,6 +1919,16 @@ select.form-control {
   background: #d97706;
 }
 
+.agency-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  font: inherit;
+  padding: 0;
+}
+
 .table-actions {
   display: flex;
   gap: var(--space-8);
@@ -2356,7 +2366,8 @@ select.form-control {
 
 /* Better visibility for action buttons */
 .incidents-table .btn-view,
-.incidents-table .btn-communicate {
+.incidents-table .btn-communicate,
+.incidents-table .agency-link {
   min-width: 80px;
   font-weight: var(--font-weight-medium);
 }
