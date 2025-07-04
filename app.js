@@ -405,6 +405,13 @@ class IBSApp {
         document.getElementById('exportBtn').addEventListener('click', () => {
             this.exportData();
         });
+
+        const ltFilter = document.getElementById('longTailStatusFilter');
+        if (ltFilter) {
+            ltFilter.addEventListener('change', () => {
+                if (this.charts.longTail) this.updateLongTailChart();
+            });
+        }
     }
 
     setupFilters() {
@@ -544,6 +551,7 @@ class IBSApp {
         this.createEquipmentChart();
         this.createMonthlyTrendChart();
         this.createMTTRChart();
+        this.createLongTailChart();
     }
 
     updateCharts() {
@@ -551,6 +559,7 @@ class IBSApp {
         if (this.charts.equipment) this.updateEquipmentChart();
         if (this.charts.monthlyTrend) this.updateMonthlyTrendChart();
         if (this.charts.mttr) this.updateMTTRChart();
+        if (this.charts.longTail) this.updateLongTailChart();
     }
 
     createSeverityChart() {
@@ -801,6 +810,67 @@ class IBSApp {
             labels: months,
             data: mttrValues
         };
+    }
+
+    getLongTailData(view) {
+        const bins = ['<1d', '1-2d', '2-3d', '3-5d', '5-7d', '7-14d', '14+d'];
+        const counts = Array(bins.length).fill(0);
+        const now = new Date();
+        const dataset = this.filteredIncidents.filter(inc => {
+            const closed = inc.status === 'Resolvido' || inc.status === 'Fechado';
+            return view === 'fechadas' ? closed : !closed;
+        });
+
+        dataset.forEach(inc => {
+            const endDate = inc.resolutionDate ? inc.resolutionDate : now;
+            const days = (endDate - inc.startDate) / (1000 * 60 * 60 * 24);
+            let idx = 6;
+            if (days < 1) idx = 0;
+            else if (days < 2) idx = 1;
+            else if (days < 3) idx = 2;
+            else if (days < 5) idx = 3;
+            else if (days < 7) idx = 4;
+            else if (days < 14) idx = 5;
+            counts[idx]++;
+        });
+
+        return { labels: bins, data: counts };
+    }
+
+    createLongTailChart() {
+        const ctx = document.getElementById('longTailChart').getContext('2d');
+        const filter = document.getElementById('longTailStatusFilter').value;
+        const data = this.getLongTailData(filter);
+
+        this.charts.longTail = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Ocorrências',
+                    data: data.data,
+                    backgroundColor: '#A855F7',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+
+    updateLongTailChart() {
+        const filter = document.getElementById('longTailStatusFilter').value;
+        const data = this.getLongTailData(filter);
+        this.charts.longTail.data.datasets[0].data = data.data;
+        this.charts.longTail.update();
     }
 
     updateTable() {

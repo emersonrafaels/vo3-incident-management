@@ -1546,6 +1546,15 @@ select.form-control {
 
 .chart-header {
   margin-bottom: var(--space-16);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-header .form-control {
+  width: auto;
+  margin-left: var(--space-12);
+  min-width: 140px;
 }
 
 .chart-title {
